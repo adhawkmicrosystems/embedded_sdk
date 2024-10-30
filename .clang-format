@@ -1,0 +1,29 @@
+---
+BasedOnStyle: LLVM
+
+AlignAfterOpenBracket: Align
+AlignOperands: Align
+AllowAllArgumentsOnNextLine: false
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortLoopsOnASingleLine: true
+BreakBeforeBinaryOperators: None
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: true
+  AfterControlStatement: true
+  AfterEnum: true
+  AfterFunction: true
+  AfterStruct: true
+  AfterUnion: true
+  BeforeElse: true
+ColumnLimit: 0
+Cpp11BracedListStyle: false
+IndentCaseLabels: true
+IndentExternBlock: NoIndent
+IndentWidth: 4
+ReflowComments: false
+SpacesBeforeTrailingComments: 2
+SpacesInContainerLiterals: false
+UseTab: Never
+...
