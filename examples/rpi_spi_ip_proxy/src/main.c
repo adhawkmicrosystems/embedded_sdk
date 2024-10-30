@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 {
     if (argc < 2)
     {
-        printf("Please specify a port\n");
+        printf("Please specify a UDP port\n");
         return 1;
     }
     const int port = atoi(argv[1]);
