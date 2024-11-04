@@ -7,38 +7,54 @@
 
 #include "ah_sdk.h"
 
-static int s_socketfd;
+static int s_clientfd;
 static struct sockaddr_in s_clientaddr;
 
 static void socketSend(const uint8_t *data, uint32_t len)
 {
-    sendto(s_socketfd, data, len, 0, (struct sockaddr *)&s_clientaddr, sizeof(s_clientaddr));
+    if (s_clientfd)
+    {
+        send(s_clientfd, data, len, 0);
+    }
 }
 
+#ifndef ECHO_SERVER
 static void trackerPacketHandler(uint8_t isStream, const uint8_t *data, uint32_t len)
 {
     (void)isStream;
-    socketSend(data, len);
+
+    uint8_t packet[128];
+    packet[0] = 0xAA;
+    uint16_t header = (len & 0x3FF);
+    if (isStream)
+    {
+        header |= 0x8000;
+    }
+    memcpy(packet + 1, &header, sizeof(header));
+    memcpy(packet + 3, data, len);
+
+    socketSend(packet, 3 + len);
 }
+#endif
 
 int main(int argc, char *argv[])
 {
     if (argc < 2)
     {
-        printf("Please specify a UDP port\n");
+        printf("Please specify a TCP port\n");
         return 1;
     }
     const int port = atoi(argv[1]);
 
-    s_socketfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (s_socketfd < 0)
+    int serverfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (serverfd < 0)
     {
         printf("Failed to create socket\n");
         return 1;
     }
 
     int enable = 1;
-    setsockopt(s_socketfd, SOL_SOCKET, SO_REUSEADDR, (const void *)&enable, sizeof(enable));
+    setsockopt(serverfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, (const void *)&enable, sizeof(enable));
 
     struct sockaddr_in server_address = {
         .sin_family = AF_INET,
@@ -46,12 +62,19 @@ int main(int argc, char *argv[])
         .sin_port = htons(port),
     };
 
-    if (bind(s_socketfd, (struct sockaddr *)&server_address, sizeof(server_address)) < 0)
+    if (bind(serverfd, (struct sockaddr *)&server_address, sizeof(server_address)) < 0)
     {
         printf("Failed to bind\n");
         return 1;
     }
 
+    if (listen(serverfd, 1) < 0)
+    {
+        printf("Failed to listen\n");
+        return 1;
+    }
+
+#ifndef ECHO_SERVER
     if (!ah_sdk_init(trackerPacketHandler))
     {
         printf("Tracker failed to connect\n");
@@ -64,24 +87,36 @@ int main(int argc, char *argv[])
                ah_sdk_trackerInfo_getFirmwareVersion(),
                ah_sdk_trackerInfo_getAPIVersion());
     }
+#endif
 
-    socklen_t clientlen = sizeof(s_clientaddr);
     uint8_t data[1024];
     while (true)
     {
-        int len = recvfrom(s_socketfd, data, sizeof(data), 0, (struct sockaddr *)&s_clientaddr, &clientlen);
-
-        // Acking these commands allows reuse of some host side code
-        if (data[2] == ah_packetType_UDPConnection ||
-            data[2] == ah_packetType_UDPDisconnect ||
-            data[2] == ah_packetType_UDPPing)
+        socklen_t clientlen = sizeof(s_clientaddr);
+        s_clientfd = accept(serverfd, (struct sockaddr *)&s_clientaddr, &clientlen);
+        if (s_clientfd < 0)
         {
-            const char ack[] = { data[0], data[1], data[2], ah_result_Success };
-            socketSend(ack, sizeof(ack));
-            continue;
+            printf("Failed to accept\n");
+            return 1;
         }
 
-        ah_sdk_forwardRequest(data, len);
+        while (true)
+        {
+            int len = recv(s_clientfd, data, sizeof(data), 0);
+            if (len <= 0)
+            {
+                // Client disconnected
+                break;
+            }
+
+#ifndef ECHO_SERVER
+            // Strip the header, it will get added back on
+            ah_sdk_forwardRequest(data + 3, len - 3);
+#else
+            socketSend(data, len);
+#endif
+        }
+        s_clientfd = 0;
     }
 
     return 0;

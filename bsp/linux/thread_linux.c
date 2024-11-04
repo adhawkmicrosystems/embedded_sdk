@@ -25,6 +25,7 @@ static void *thread_function_wrapper(void *arg)
 {
     ah_thread_t *thread = arg;
     thread->func();
+    return NULL;
 }
 
 ah_thread_t *ah_thread_create(ah_threadFunc_t entry, size_t stack_size, int prio, const char *name)

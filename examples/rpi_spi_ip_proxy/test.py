@@ -8,12 +8,15 @@ args = parser.parse_args()
 
 MESSAGE = bytes([0x00, 0x00, 0x85])  # Autotune
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.settimeout(5)
-sock.sendto(MESSAGE, (args.ip, int(args.port)))
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect((args.ip, int(args.port)))
+sock.send(MESSAGE)
 
-try:
-    data, server = sock.recvfrom(1024)
-    print(data)
-except socket.timeout:
-    print('Request Timeout')
+while True:
+    try:
+        data = sock.recv(1024)
+        print(data)
+        if data[2] == 0x85:
+            break;
+    except socket.timeout:
+        print('Request Timeout')

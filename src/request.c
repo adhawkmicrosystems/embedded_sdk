@@ -140,6 +140,11 @@ bool ah_request_waitingForResponse(uint16_t requestId)
 static ah_result sendRequest(const void *requestData, uint32_t requestLen,
                              void **response, uint32_t *responseLen, bool fullResponse)
 {
+    if (requestLen > API2_MAX_PACKET_SIZE - API2_PKT_OVERHEAD - sizeof(s_nextRequestId))
+    {
+        return ah_result_Failure;
+    }
+
     if (!ah_mutex_lock(s_requestMutex, AH_NO_TIMEOUT))
     {
         ah_log_error("Unable to wait for request mutex");
@@ -216,6 +221,11 @@ void ah_request_forwardRequest(const uint8_t *request, uint32_t requestLen)
 
 void ah_request_sendRequestNoResponse(const void *request, uint32_t requestLen)
 {
+    if (requestLen > API2_MAX_PACKET_SIZE - API2_PKT_OVERHEAD - sizeof(s_nextRequestId))
+    {
+        return;
+    }
+
     uint8_t buffer[API2_MAX_PACKET_SIZE];
     ah_mutex_lock(s_requestMutex, AH_NO_TIMEOUT);
     uint16_t id = s_nextRequestId++;
