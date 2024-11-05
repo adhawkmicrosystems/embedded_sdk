@@ -6,6 +6,8 @@
 #include <string.h>
 
 #include "ah_sdk.h"
+#include "packet.h"      // Included to help add / remove packet headers
+#include "spi_master.h"  // Included to increase SPI polling rate to increase throughput
 
 static int s_clientfd;
 static struct sockaddr_in s_clientaddr;
@@ -23,17 +25,17 @@ static void trackerPacketHandler(uint8_t isStream, const uint8_t *data, uint32_t
 {
     (void)isStream;
 
-    uint8_t packet[128];
-    packet[0] = 0xAA;
-    uint16_t header = (len & 0x3FF);
+    uint8_t packet[API2_MAX_PACKET_SIZE];
+    packet[0] = API2_PKT_SOP;
+    uint16_t header = (len & API2_LENGTH_MASK);
     if (isStream)
     {
-        header |= 0x8000;
+        header |= API2_STREAM_MASK;
     }
     memcpy(packet + 1, &header, sizeof(header));
-    memcpy(packet + 3, data, len);
+    memcpy(packet + API2_PKT_OVERHEAD, data, len);
 
-    socketSend(packet, 3 + len);
+    socketSend(packet, API2_PKT_OVERHEAD + len);
 }
 #endif
 
@@ -88,8 +90,12 @@ int main(int argc, char *argv[])
                ah_sdk_trackerInfo_getAPIVersion());
     }
 #endif
+    // Improve throughput when proxying pulses and fwup data
+    ah_spi_master_setRate(ah_spiPollingRate_Fast);
 
+    int len = 0;
     uint8_t data[1024];
+
     while (true)
     {
         socklen_t clientlen = sizeof(s_clientaddr);
@@ -102,16 +108,40 @@ int main(int argc, char *argv[])
 
         while (true)
         {
-            int len = recv(s_clientfd, data, sizeof(data), 0);
-            if (len <= 0)
+            int recvLen = recv(s_clientfd, data + len, sizeof(data) - len, 0);
+            if (recvLen <= 0)
             {
                 // Client disconnected
                 break;
             }
+            len += recvLen;
 
 #ifndef ECHO_SERVER
-            // Strip the header, it will get added back on
-            ah_sdk_forwardRequest(data + 3, len - 3);
+            // TCP data frames can contain multiple or partial packets
+            const uint8_t *p = data;
+            while (*p == API2_PKT_SOP && len > API2_PKT_OVERHEAD)
+            {
+                uint16_t header;
+                memcpy(&header, p + 1, sizeof(header));
+                const uint16_t data_len = header & API2_LENGTH_MASK;
+                const uint16_t packet_len = data_len + API2_PKT_OVERHEAD;
+                const bool isStream = header & API2_STREAM_MASK;
+
+                if (len < packet_len)
+                {
+                    memmove(data, p, len);
+                    break;
+                }
+
+                ah_sdk_forwardRequest(p + API2_PKT_OVERHEAD, data_len);
+                p += packet_len;
+                len -= packet_len;
+            }
+
+            if (len)
+            {
+                memmove(data, p, len);
+            }
 #else
             socketSend(data, len);
 #endif

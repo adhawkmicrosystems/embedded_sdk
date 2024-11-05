@@ -63,6 +63,7 @@ void ah_spi_deinit(void)
     if (s_device != -1)
     {
         close(s_device);
+        s_device = -1;
     }
 
     gpiod_line_request_release(s_gpioRequest);

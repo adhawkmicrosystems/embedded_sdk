@@ -16,6 +16,8 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${ROOT_DIR}/bsp/inc/
     ${ROOT_DIR}/inc/
     ${ROOT_DIR}/examples/common/
+    # Hack to help proxy packets
+    ${ROOT_DIR}/src/
 )
 
 target_link_libraries(${CMAKE_PROJECT_NAME} gpiod)

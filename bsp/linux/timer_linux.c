@@ -26,6 +26,14 @@ ah_timer_t *ah_timer_create(ah_timerCallback callback)
     ah_timer_t *timer = malloc(sizeof(ah_timer_t));
     if (timer)
     {
+        struct sigevent sev = {
+            .sigev_notify = SIGEV_THREAD,
+            .sigev_notify_function = callback_wrapper,
+            .sigev_value.sival_ptr = timer,
+        };
+
+        timer_create(CLOCK_MONOTONIC, &sev, &timer->hdl);
+
         timer->callback = callback;
     }
 
@@ -40,14 +48,6 @@ void ah_timer_destroy(ah_timer_t *timer)
 
 void ah_timer_startPeriodic(ah_timer_t *timer, uint64_t period_us)
 {
-    struct sigevent sev = {
-        .sigev_notify = SIGEV_THREAD,
-        .sigev_notify_function = callback_wrapper,
-        .sigev_value.sival_ptr = timer,
-    };
-
-    timer_create(CLOCK_MONOTONIC, &sev, &timer->hdl);
-
     struct itimerspec its = {
         .it_value.tv_sec = period_us / 1000000,
         .it_value.tv_nsec = (period_us % 1000000) * 1000,
