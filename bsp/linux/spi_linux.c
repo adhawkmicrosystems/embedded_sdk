@@ -1,8 +1,16 @@
+#ifndef ANDROID_BUILD
+// NOTE: we define the values defined in this header file in `cflags` instead
 #include "ah_spi_pins.h"
+#endif  // ANDROID_BUILD
+
 #include "bsp_spi.h"
 
 #include <fcntl.h>
+
+#ifndef AH_SPI_NO_CS
 #include <gpiod.h>
+#endif  // AH_SPI_NO_CS
+
 #include <linux/spi/spidev.h>
 #include <stdio.h>
 #include <sys/ioctl.h>
@@ -15,6 +23,8 @@ const int SPI_BITS_PER_WORD = 8;
 const int SPI_FREQUENCY = AH_SPI_FREQUENCY;
 
 static int s_device = -1;
+
+#ifndef AH_SPI_NO_CS
 static struct gpiod_line_request *s_gpioRequest;
 
 static void set_cs_gpio(enum gpiod_line_value value)
@@ -39,6 +49,7 @@ static void init_cs_gpio(void)
     gpiod_line_settings_free(settings);
     gpiod_chip_close(chip);
 }
+#endif  // AH_SPI_NO_CS
 
 bool ah_spi_init(void)
 {
@@ -53,7 +64,9 @@ bool ah_spi_init(void)
     ioctl(s_device, SPI_IOC_WR_BITS_PER_WORD, &SPI_BITS_PER_WORD);
     ioctl(s_device, SPI_IOC_WR_MAX_SPEED_HZ, &SPI_FREQUENCY);
 
+#ifndef AH_SPI_NO_CS
     init_cs_gpio();
+#endif  // AH_SPI_NO_CS
 
     return true;
 }
@@ -65,7 +78,9 @@ void ah_spi_deinit(void)
         close(s_device);
     }
 
+#ifndef AH_SPI_NO_CS
     gpiod_line_request_release(s_gpioRequest);
+#endif  // AH_SPI_NO_CS
 }
 
 int ah_spi_getThreadPriority(void)
@@ -84,7 +99,13 @@ void ah_spi_transferFullDuplex(uint8_t txFrame[AH_SPI_FRAME_SIZE], uint8_t rxFra
         .bits_per_word = SPI_BITS_PER_WORD,
     };
 
+#ifndef AH_SPI_NO_CS
     set_cs_gpio(GPIOD_LINE_VALUE_INACTIVE);
+#endif  // AH_SPI_NO_CS
+
     ioctl(s_device, SPI_IOC_MESSAGE(1), &tr);
+
+#ifndef AH_SPI_NO_CS
     set_cs_gpio(GPIOD_LINE_VALUE_ACTIVE);
+#endif  // AH_SPI_NO_CS
 }
