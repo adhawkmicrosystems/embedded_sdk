@@ -20,8 +20,6 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${ROOT_DIR}/src/
 )
 
-target_link_libraries(${CMAKE_PROJECT_NAME} gpiod)
-
 FILE(GLOB sdk_sources ${ROOT_DIR}/src/*.c)
 FILE(GLOB rpi_bsp_sources ${ROOT_DIR}/bsp/linux/*.c)
 FILE(GLOB app_sources src/*.c  ${ROOT_DIR}/examples/common/*.c)

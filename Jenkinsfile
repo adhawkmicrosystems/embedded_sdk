@@ -36,8 +36,28 @@ pipeline {
                     steps {
                         sh '''
                             cd examples/stm32wb55
-                            rm -rf build && mkdir build && cd build
-                            cmake .. && make
+                            rm -rf build && cmake -B build
+                            cmake --build build
+                        '''
+                    }
+                }
+                stage('rpi example') {
+                    agent { label 'tros-build' }
+                    steps {
+                        sh '''
+                            cd examples/rpi
+                            rm -rf build && cmake -B build
+                            cmake --build build
+                        '''
+                    }
+                }
+                stage('rpi spi ip proxy example') {
+                    agent { label 'tros-build' }
+                    steps {
+                        sh '''
+                            cd examples/rpi_spi_ip_proxy
+                            rm -rf build && cmake -B build
+                            cmake --build build
                         '''
                     }
                 }

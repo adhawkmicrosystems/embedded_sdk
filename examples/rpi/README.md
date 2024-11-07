@@ -4,8 +4,6 @@ Make sure to enable SPI on the RPI 4. Open the Raspberry Pi Configuration -> Int
 
 ## SPI Setup
 
-libgpiod is a required dependancy: https://github.com/brgl/libgpiod
-
 Modify the `ah_spi_pins.h` header with the correct pin configuration for your device. Alternatively set the values using environment variables.
 
 ## Using the command line
