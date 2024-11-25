@@ -6,8 +6,8 @@ This example was tested against the `esp32s3` board.
 
 ## Using the command line
 
-Configure the project: `idf.py set-target esp32s3`
 To build: `idf.py build`
+
 To flash: `idf.py flash monitor`
 
 ## SPI Setup
