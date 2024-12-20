@@ -1,7 +1,5 @@
 #pragma once
 
-#include "bsp_thread.h"
-
 #include <stdbool.h>
 #include <stdint.h>
 

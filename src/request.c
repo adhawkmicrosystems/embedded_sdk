@@ -2,6 +2,7 @@
 
 #include "bsp_alloc.h"
 #include "bsp_logging.h"
+#include "bsp_random.h"
 #include "bsp_thread.h"
 #include "packet.h"
 #include "spi_master.h"
@@ -246,7 +247,7 @@ bool ah_request_init(void)
     }
 
     s_shuttingDown = 0;
-    s_nextRequestId = 0;  // Could be random, but doesn't really matter
+    ah_random(&s_nextRequestId, sizeof(s_nextRequestId));
 
     s_requestMutex = ah_mutex_create();
     if (!s_requestMutex)

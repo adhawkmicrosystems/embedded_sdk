@@ -125,6 +125,18 @@ AH_API ah_result ah_sdk_validationComplete(void);
 //! Add a validation point to an ongoing validation
 AH_API ah_result ah_sdk_validationRegisterPoint(float xPos, float yPos, float zPos);
 
+//! Loads a previously saved personalization
+AH_API ah_result ah_sdk_personalizationLoad(uint32_t blobId);
+
+//! Saves the current personalization and returns a unique identifier
+AH_API ah_result ah_sdk_personalizationSave(uint32_t *blobId);
+
+//! Deletes a previously saved personalization
+AH_API ah_result ah_sdk_personalizationDelete(uint32_t blobId);
+
+//! Clear the current personalization from the tracker
+AH_API ah_result ah_sdk_personalizationClear(void);
+
 //! Read eye offsets. Offset data is in mm
 AH_API ah_result ah_sdk_getNominalEyeOffsets(float offsets[AH_NUM_EYES][AH_XYZ_SIZE]);
 

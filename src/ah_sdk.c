@@ -3,6 +3,7 @@
 #include "ah_api.h"
 #include "ah_api_decoders.h"
 #include "ah_types.h"
+#include "blob_api.h"
 #include "request.h"
 #include "spi_master.h"
 #include "tracker_info.h"
@@ -389,6 +390,26 @@ AH_API ah_result ah_sdk_validationComplete(void)
 AH_API ah_result ah_sdk_validationRegisterPoint(float xPos, float yPos, float zPos)
 {
     return ah_api_validationRegisterPoint(xPos, yPos, zPos);
+}
+
+AH_API ah_result ah_sdk_personalizationLoad(uint32_t blobId)
+{
+    return ah_blob_api_handleLoadBlob(ah_blobType_Personalization, blobId);
+}
+
+AH_API ah_result ah_sdk_personalizationSave(uint32_t *blobId)
+{
+    return ah_blob_api_handleSaveBlob(ah_blobType_Personalization, blobId);
+}
+
+AH_API ah_result ah_sdk_personalizationDelete(uint32_t blobId)
+{
+    return ah_blob_api_handleDeleteBlob(blobId);
+}
+
+AH_API ah_result ah_sdk_personalizationClear(void)
+{
+    return ah_blob_api_clearBlob(ah_blobType_Personalization);
 }
 
 AH_API ah_result ah_sdk_getNominalEyeOffsets(float offsets[AH_NUM_EYES][AH_XYZ_SIZE])
