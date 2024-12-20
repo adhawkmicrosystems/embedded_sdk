@@ -42,7 +42,7 @@ pipeline {
                     }
                 }
                 stage('rpi example') {
-                    agent { label 'tros-build' }
+                    agent { label 'test-pi-3' }
                     steps {
                         sh '''
                             cd examples/rpi
@@ -52,7 +52,7 @@ pipeline {
                     }
                 }
                 stage('rpi spi ip proxy example') {
-                    agent { label 'tros-build' }
+                    agent { label 'test-pi-3' }
                     steps {
                         sh '''
                             cd examples/rpi_spi_ip_proxy
@@ -61,6 +61,19 @@ pipeline {
                         '''
                     }
                 }
+            }
+        }
+        stage('Test RPI Proxy') {
+            agent { label 'test-pi-3' }
+            environment {
+                IP = sh returnStdout: true, script: "echo ${SSH_CONNECTION} |  cut -d ' ' -f3"
+                PORT = 45555
+            }
+            steps {
+                sh './examples/rpi_spi_ip_proxy/build/rpi_spi_ip_proxy $PORT &'
+
+                build job: 'rpi-spi-tcp-test',
+                    parameters: [string(name: 'RPI_IP', value: IP), string(name: 'RPI_PORT', value: PORT)]
             }
         }
     }
